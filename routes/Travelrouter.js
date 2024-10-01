@@ -4,6 +4,7 @@ const travelController = require("../controllers/travelController");
 const router = express.Router();
 
 router.route('/top-5-cheap').get(travelController.aliasTopTravel,travelController.getAllTravel)
+router.route('/monthly-plan/:year').get(travelController.getMonthlyPlan)
 
 router.route('/travel-stats').get(travelController.getTravelStats)
 router.route("/").get(travelController.getAllTravel).post(
