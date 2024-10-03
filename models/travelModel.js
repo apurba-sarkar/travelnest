@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const slugify = require("slugify")
+const slugify = require("slugify");
 
 const travelSchema = new mongoose.Schema(
   {
@@ -8,7 +8,7 @@ const travelSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    slug:String,
+    slug: String,
     duration: {
       type: Number,
       required: [true, "A travel must have a duration"],
@@ -46,9 +46,13 @@ const travelSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now(),
-      selec: false,
+      select: false,
     },
     startDates: [Date],
+    secretTravel: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     toJSON: {
@@ -62,8 +66,8 @@ travelSchema.virtual("durationWeeks").get(function () {
 });
 
 travelSchema.pre("save", function (next) {
-  this.slug= slugify(this.name,{lower:true})
-  next()
+  this.slug = slugify(this.name, { lower: true });
+  next();
   console.log(this);
 });
 
@@ -72,6 +76,12 @@ travelSchema.pre("save", function (next) {
 //   next()
 
 // })
+// Query
+
+travelSchema.pre("find", function (next) {
+  this.find({ secretTravel: { $ne: true } });
+  next();
+});
 
 const Travel = mongoose.model("Travel", travelSchema);
 
