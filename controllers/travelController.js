@@ -124,7 +124,7 @@ exports.getTravelStats = async (req, res) => {
       },
       {
         $group: {
-          _id: null, // Grouping all documents together
+          _id: {$toUpper:'$difficulty'}, // Grouping all documents together
           numTravels: { $sum: 1 },
           numRating: { $sum: "$ratingAverage" }, // Using the correct field name
           avgRating: { $avg: "$ratingAverage" }, // Using the correct field name

@@ -6,7 +6,18 @@ const app = express();
 const travelRouter = require("./routes/Travelrouter");
 app.use(morgan('dev'))
 app.use(express.json());
+
+
 app.use("/api/v1/travels", travelRouter);
+
+app.all('*',(req,res,next)=>{
+  res.status(404).json({
+    status:'fail',
+    message:`Can't find ${req.originalUrl} on this site`
+  })
+  // next()
+})
+
 
 const PORT = process.env.PORT || 3000;
 dotenv.config({ path: "./config.env" });

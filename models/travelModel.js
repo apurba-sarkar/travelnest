@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
+const validator = require("validator")
 
 const travelSchema = new mongoose.Schema(
   {
@@ -7,6 +8,10 @@ const travelSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      maxlength: [40, "must have equal and less than 40 character"],
+      minlength: [10, "must have equal and greater than 10 character"],
+      validate:[validator.isAlpha, "travel name only contain characters"]
     },
     slug: String,
     duration: {
@@ -32,8 +37,20 @@ const travelSchema = new mongoose.Schema(
     difficulty: {
       type: String,
       required: [true, "A travel must have a difficulty"],
+      enum: {
+        values: ["easy", "medium", "difficult"],
+        message: "please choose among easy,medium and difficult",
+      },
     },
-    priceDiscount: Number,
+    priceDiscount: {
+      type: Number,
+      validate: {
+        validator:function(val) {
+          return val < this.price;
+        },
+        message:'Discount price should below the regular {VALUE} price',
+      },
+    },
     summery: {
       type: String,
       trim: true,
@@ -78,11 +95,17 @@ travelSchema.pre("save", function (next) {
 // })
 // Query
 
-travelSchema.pre("find", function (next) {
+travelSchema.pre(/^find/, function (next) {
   this.find({ secretTravel: { $ne: true } });
   next();
 });
 
+// Aggregation middleware
+travelSchema.pre("aggregate", function (next) {
+  this.pipeline().unshift({ $match: { secretTravel: { $ne: true } } });
+  console.log(this.pipeline);
+  next();
+});
 const Travel = mongoose.model("Travel", travelSchema);
 
 module.exports = Travel;
