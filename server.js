@@ -1,27 +1,10 @@
-const dotenv = require("dotenv");
-const morgan =require("morgan")
 const mongoose = require("mongoose");
-const express = require("express");
-const app = express();
-const travelRouter = require("./routes/Travelrouter");
-app.use(morgan('dev'))
-app.use(express.json());
+const app = require("./app");
+const dotenv = require("dotenv");
 
-
-app.use("/api/v1/travels", travelRouter);
-
-app.all('*',(req,res,next)=>{
-  res.status(404).json({
-    status:'fail',
-    message:`Can't find ${req.originalUrl} on this site`
-  })
-  // next()
-})
-
-
-const PORT = process.env.PORT || 3000;
 dotenv.config({ path: "./config.env" });
 
+const PORT = process.env.PORT || 3000;
 
 console.log("----------");
 const DB = process.env.DATABASE.replace(
@@ -30,7 +13,7 @@ const DB = process.env.DATABASE.replace(
 );
 mongoose
   .connect(DB)
-  .then(() => console.log("DB conneciton success"))
+  .then(() => console.log("DB connection success"))
   .catch((err) => console.log(err));
 
 app.listen(PORT, () => {
