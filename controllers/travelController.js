@@ -1,5 +1,6 @@
 const APIFeatures = require("./../utils/apiFeatures");
 const Travel = require("../models/travelModel");
+const catchAsync = require("../utils/catchAsync");
 
 // exports.checkID = (req, res, next, val) => {
 //   console.log("id is : ", val);
@@ -70,23 +71,24 @@ exports.getTravel = async (req, res) => {
   }
 };
 
-exports.createTravel = async (req, res) => {
-  try {
-    const newTravel = await Travel.create(req.body);
+exports.createTravel = catchAsync(async (req, res, next) => {
+  const newTravel = await Travel.create(req.body);
 
-    res.status(201).json({
-      status: "success",
-      data: {
-        travel: newTravel,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err,
-    });
-  }
-};
+  res.status(201).json({
+    status: "success",
+    data: {
+      travel: newTravel,
+    },
+  });
+  // try {
+
+  // } catch (err) {
+  //   res.status(400).json({
+  //     status: "fail",
+  //     message: err,
+  //   });
+  // }
+});
 
 exports.updateTravel = async (req, res) => {
   try {
@@ -124,7 +126,7 @@ exports.getTravelStats = async (req, res) => {
       },
       {
         $group: {
-          _id: {$toUpper:'$difficulty'}, // Grouping all documents together
+          _id: { $toUpper: "$difficulty" }, // Grouping all documents together
           numTravels: { $sum: 1 },
           numRating: { $sum: "$ratingAverage" }, // Using the correct field name
           avgRating: { $avg: "$ratingAverage" }, // Using the correct field name
