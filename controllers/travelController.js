@@ -1,6 +1,7 @@
 const APIFeatures = require("./../utils/apiFeatures");
 const Travel = require("../models/travelModel");
 const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/appError");
 
 // exports.checkID = (req, res, next, val) => {
 //   console.log("id is : ", val);
@@ -56,20 +57,21 @@ exports.getAllTravel = async (req, res) => {
   }
 };
 
-exports.getTravel = async (req, res) => {
-  try {
-    const travels = await Travel.findById(req.params.id);
-
-    res.status(200).json({
-      status: "success",
-      requestedAt: req.requestTime,
-      results: Travel.length,
-      data: travels,
-    });
-  } catch (err) {
-    console.log(err);
+exports.getTravel = catchAsync(async (req, res,next) => {
+  const travels = await Travel.findById(req.params.id);
+  
+  console.log("---------------",travels)
+  if (!travels) {
+    return next(new AppError("no tour found", 404));
   }
-};
+  
+  res.status(200).json({
+    status: "success",
+    requestedAt: req.requestTime,
+    results: Travel.length,
+    data: travels,
+  });
+});
 
 exports.createTravel = catchAsync(async (req, res, next) => {
   const newTravel = await Travel.create(req.body);
@@ -90,115 +92,93 @@ exports.createTravel = catchAsync(async (req, res, next) => {
   // }
 });
 
-exports.updateTravel = async (req, res) => {
-  try {
-    const travel = await Travel.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    res.status(200).json({
-      status: "success",
-      data: "<Updated Travel>",
-      updatedData: travel,
-    });
-  } catch (err) {
-    console.log(err);
-  }
-};
+exports.updateTravel = catchAsync(async (req, res) => {
+  const travel = await Travel.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  res.status(200).json({
+    status: "success",
+    data: "<Updated Travel>",
+    updatedData: travel,
+  });
+});
 
-exports.deleteTravel = async (req, res) => {
-  try {
-    await Travel.findByIdAndDelete(req.params.id);
-    res.status(204).json({
-      status: "success",
-      data: null,
-    });
-  } catch (err) {
-    console.log(err);
-  }
-};
+exports.deleteTravel = catchAsync(async (req, res) => {
+  await Travel.findByIdAndDelete(req.params.id);
+  res.status(204).json({
+    status: "success",
+    data: null,
+  });
+});
 
-exports.getTravelStats = async (req, res) => {
-  try {
-    const stats = await Travel.aggregate([
-      {
-        $match: { ratingAverage: { $gte: 4.5 } }, // Using the correct field name
+exports.getTravelStats = catchAsync(async (req, res) => {
+  const stats = await Travel.aggregate([
+    {
+      $match: { ratingAverage: { $gte: 4.5 } }, // Using the correct field name
+    },
+    {
+      $group: {
+        _id: { $toUpper: "$difficulty" }, // Grouping all documents together
+        numTravels: { $sum: 1 },
+        numRating: { $sum: "$ratingAverage" }, // Using the correct field name
+        avgRating: { $avg: "$ratingAverage" }, // Using the correct field name
+        avgPrice: { $avg: "$price" },
+        maxPrice: { $max: "$price" },
+        minPrice: { $min: "$price" },
       },
-      {
-        $group: {
-          _id: { $toUpper: "$difficulty" }, // Grouping all documents together
-          numTravels: { $sum: 1 },
-          numRating: { $sum: "$ratingAverage" }, // Using the correct field name
-          avgRating: { $avg: "$ratingAverage" }, // Using the correct field name
-          avgPrice: { $avg: "$price" },
-          maxPrice: { $max: "$price" },
-          minPrice: { $min: "$price" },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      stats,
+    },
+  });
+});
+
+exports.getMonthlyPlan = catchAsync(async (req, res) => {
+  const year = req.params.year * 1;
+  const plan = await Travel.aggregate([
+    {
+      $unwind: "$startDates",
+    },
+    {
+      $match: {
+        startDates: {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`),
         },
       },
-    ]);
+    },
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        stats,
+    {
+      $group: {
+        _id: { $month: "$startDates" },
+        numTravelStats: { $sum: 1 },
+        travels: { $push: "$name" },
       },
-    });
-  } catch (err) {
-    res.status(404).json({
-      status: "fail",
-      message: err,
-    });
-  }
-};
-
-exports.getMonthlyPlan = async (req, res) => {
-  try {
-    const year = req.params.year * 1;
-    const plan = await Travel.aggregate([
-      {
-        $unwind: "$startDates",
+    },
+    {
+      $addFields: { month: "$_id" },
+    },
+    {
+      $project: {
+        _id: 0,
       },
-      {
-        $match: {
-          startDates: {
-            $gte: new Date(`${year}-01-01`),
-            $lte: new Date(`${year}-12-31`),
-          },
-        },
-      },
-
-      {
-        $group: {
-          _id: { $month: "$startDates" },
-          numTravelStats: { $sum: 1 },
-          travels: { $push: "$name" },
-        },
-      },
-      {
-        $addFields: { month: "$_id" },
-      },
-      {
-        $project: {
-          _id: 0,
-        },
-      },
-      {
-        $sort: { numTravelStats: -1 },
-      },
-      // {
-      //   $limit:1
-      // }
-    ]);
-    res.status(200).json({
-      status: "success",
-      data: {
-        plan,
-      },
-    });
-  } catch (err) {
-    res.status(404).json({
-      status: "fail",
-      message: err,
-    });
-  }
-};
+    },
+    {
+      $sort: { numTravelStats: -1 },
+    },
+    // {
+    //   $limit:1
+    // }
+  ]);
+  res.status(200).json({
+    status: "success",
+    data: {
+      plan,
+    },
+  });
+});
