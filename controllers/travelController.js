@@ -57,14 +57,14 @@ exports.getAllTravel = async (req, res) => {
   }
 };
 
-exports.getTravel = catchAsync(async (req, res,next) => {
+exports.getTravel = catchAsync(async (req, res, next) => {
   const travels = await Travel.findById(req.params.id);
-  
-  console.log("---------------",travels)
+
+  console.log("---------------", travels);
   if (!travels) {
     return next(new AppError("no tour found", 404));
   }
-  
+
   res.status(200).json({
     status: "success",
     requestedAt: req.requestTime,
@@ -97,6 +97,9 @@ exports.updateTravel = catchAsync(async (req, res) => {
     new: true,
     runValidators: true,
   });
+  if (!travels) {
+    return next(new AppError("no tour found", 404));
+  }
   res.status(200).json({
     status: "success",
     data: "<Updated Travel>",
@@ -106,6 +109,9 @@ exports.updateTravel = catchAsync(async (req, res) => {
 
 exports.deleteTravel = catchAsync(async (req, res) => {
   await Travel.findByIdAndDelete(req.params.id);
+  if (!travels) {
+    return next(new AppError("no tour found", 404));
+  }
   res.status(204).json({
     status: "success",
     data: null,
