@@ -18,9 +18,9 @@ exports.signup = catchAsync(async (req, res, next) => {
   res.status(201).json({
     status: "success",
     token,
-    // data: {
-    //   user: newUser,
-    // },
+    data: {
+      user: newUser,
+    },
   });
 });
 
@@ -29,8 +29,13 @@ exports.login = (req, res, next) => {
   // if email or password exit
 
   if (!email || password)
-    next(new AppError("please provide email and password", 400));
+    return next(new AppError("please provide email and password", 400));
 
   // if user exist and paassword is correct
   // if eveything ok send token to client
+  const token = "";
+  res.status(200).json({
+    status: "success",
+    token,
+  });
 };
