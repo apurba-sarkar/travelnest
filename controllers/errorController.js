@@ -46,6 +46,9 @@ const sendErrorProduction = (err, res) => {
   }
 };
 
+const handleJWTError = (err) =>
+  new AppError("Invaild Token, Please Login again", 401);
+
 module.exports = (err, req, res, next) => {
   console.log(err.stack);
   err.statusCode = err.statusCode || 500;
@@ -59,6 +62,7 @@ module.exports = (err, req, res, next) => {
     if (error.name == "CastError") error = handleCastErrorDB(error);
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === "validationError") error = handleVAlidationDB(error);
+    if (error.name === "JsonWebTokenError") error = handleJWTError(error);
     let error = { ...err };
     sendErrorProduction(error, res);
   }
