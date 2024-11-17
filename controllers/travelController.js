@@ -32,7 +32,7 @@ exports.aliasTopTravel = async (req, res, next) => {
   next();
 };
 
-exports.getAllTravel = async (req, res) => {
+exports.getAllTravel = async (req, res, next) => {
   try {
     const features = new APIFeatures(Travel.find(), req.query)
       .filter()
@@ -58,7 +58,8 @@ exports.getAllTravel = async (req, res) => {
 };
 
 exports.getTravel = catchAsync(async (req, res, next) => {
-  const travels = await Travel.findById(req.params.id);
+  const travels = await Travel.findById(req.params.id)
+  .populate('reviews')
 
   console.log("---------------", travels);
   if (!travels) {

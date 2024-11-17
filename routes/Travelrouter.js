@@ -1,8 +1,12 @@
 const express = require("express");
 const travelController = require("../controllers/travelController");
 const authController = require("../controllers/authController");
+const reviewController = require("./../controllers/reviewController");
+const reviewRouter = require("./reviewRoute");
 
 const router = express.Router();
+
+router.use("/:travelId/reviews", reviewRouter);
 
 router
   .route("/top-5-cheap")
@@ -25,8 +29,16 @@ router
   .patch(travelController.updateTravel)
   .delete(
     authController.protect,
-    authController.restrictTo("admin","lead-guide"),
+    authController.restrictTo("admin", "lead-guide"),
     travelController.deleteTravel
   );
+
+// router
+//   .route("/:travelId/reviews")
+//   .post(
+//     authController.protect,
+//     authController.restrictTo("user"),
+//     reviewController.createReview
+//   );
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 const validator = require("validator");
+// const User = require("./userModel");
 
 const travelSchema = new mongoose.Schema(
   {
@@ -11,7 +12,7 @@ const travelSchema = new mongoose.Schema(
       trim: true,
       maxlength: [40, "must have equal and less than 40 character"],
       minlength: [10, "must have equal and greater than 10 character"],
-      validate: [validator.isAlpha, "travel name only contain characters"],
+      // validate: [validator.isAlpha, "travel name only contain characters"],
     },
     slug: String,
     duration: {
@@ -70,11 +71,39 @@ const travelSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      type: {
+        type: String,
+        default: "Point",
+        enum: ["Point"],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: "Point",
+          enum: ["Point"],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
-    toJSON: {
-      virtuals: true,
-    },
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
@@ -82,11 +111,26 @@ travelSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
 });
 
+// !virtual populate
+travelSchema.virtual("reviews", {
+  ref: "Review", //!model name
+  foreignField: "travel",
+  localField: "_id"
+});
+
+//!end-
+
 travelSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
   console.log(this);
 });
+
+// travelSchema.pre('save',async function(next){
+//   const guidesPromises = this.guides.map(async id=> await User.findById(id))
+//   this.guides =await Promise.all(guidesPromises)
+//   next()
+// })
 
 // travelSchema.post("save",function(doc,next){
 //   console.log(doc)
@@ -97,6 +141,15 @@ travelSchema.pre("save", function (next) {
 
 travelSchema.pre(/^find/, function (next) {
   this.find({ secretTravel: { $ne: true } });
+  this.start = Date.now();
+  next();
+});
+
+travelSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "guides",
+    select: "-__v -passwordChangedAt",
+  });
   next();
 });
 

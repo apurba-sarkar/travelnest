@@ -3,7 +3,19 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const Travel = require("../models/travelModel");
 
-dotenv.config({ path: "../config.env" });
+
+dotenv.config({ path: "./config.env" });
+
+
+const result = dotenv.config({ path: "./config.env" });
+
+if (result.error) {
+  console.log("Error loading .env file:", result.error);
+} else {
+  console.log("Environment variables loaded:", result.parsed);
+}
+
+console.log(process.env.DATABASE_PASSWORD);
 
 const DB = process.env.DATABASE.replace(
   "<db_password>",
@@ -12,17 +24,17 @@ const DB = process.env.DATABASE.replace(
 mongoose
   .connect(DB)
   .then(() => console.log("DB conneciton success"))
-  .catch((err) => console.log(err));
+  .catch((err) => console.log(err, "Database string error"));
 
 const travels = JSON.parse(
-  fs.readFileSync(`${__dirname}/tours-simple.json`, "utf-8")
+  fs.readFileSync(`${__dirname}/tours.json`, "utf-8")
 );
 
 const importData = async () => {
   try {
     await Travel.create(travels);
     console.log("Data suucesfully inserted");
-    process.exit()
+    process.exit();
   } catch (err) {
     console.log(err);
   }
@@ -31,7 +43,7 @@ const deleteData = async () => {
   try {
     await Travel.deleteMany();
     console.log("Data suucesfully deleted");
-    process.exit()
+    process.exit();
   } catch (err) {
     console.log(err);
   }

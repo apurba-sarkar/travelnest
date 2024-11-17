@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const AppError = require("./utils/appError");
 const travelRouter = require("./routes/Travelrouter");
 const userRouter = require("./routes/Userrouter");
+const reviewRouter = require("./routes/reviewRoute");
 const globalErrorHanlder = require("./controllers/errorController");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
@@ -38,7 +39,7 @@ app.use(
       "ratingsAverage",
       "maxGroupSize",
       "difficulty",
-      "price"
+      "price",
     ],
   })
 );
@@ -60,6 +61,8 @@ app.use((req, res, next) => {
 // Routes
 app.use("/api/v1/travels", travelRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/reviews", reviewRouter);
+
 app.all("*", (req, res, next) => {
   //   res.status(404).json({
   //     status: "fail",
