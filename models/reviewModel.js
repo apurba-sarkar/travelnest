@@ -18,7 +18,7 @@ const reviewSchema = new mongoose.Schema(
     travel: {
       type: mongoose.Schema.ObjectId,
       ref: "Travel",
-      required: [true, "Review must belong to a tour"],
+      required: [true, "Review must belong to a travel"],
     },
     user: {
       type: mongoose.Schema.ObjectId,

@@ -111,7 +111,7 @@ travelSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
 });
 
-// !virtual populate
+// !virtual populate for relation-->populate should be added to the controller
 travelSchema.virtual("reviews", {
   ref: "Review", //!model name
   foreignField: "travel",
@@ -144,6 +144,9 @@ travelSchema.pre(/^find/, function (next) {
   this.start = Date.now();
   next();
 });
+
+
+// *popualte used with pre method --> no need to add on controller
 
 travelSchema.pre(/^find/, function (next) {
   this.populate({

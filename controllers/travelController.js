@@ -2,6 +2,7 @@ const APIFeatures = require("./../utils/apiFeatures");
 const Travel = require("../models/travelModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
+const factory = require("../controllers/handlerFactory");
 
 // exports.checkID = (req, res, next, val) => {
 //   console.log("id is : ", val);
@@ -24,7 +25,6 @@ const AppError = require("../utils/appError");
 //     });
 //   }
 // };
-
 exports.aliasTopTravel = async (req, res, next) => {
   req.query.limit = "5";
   req.query.sort = "-ratingsAverage,price";
@@ -32,92 +32,90 @@ exports.aliasTopTravel = async (req, res, next) => {
   next();
 };
 
-exports.getAllTravel = async (req, res, next) => {
-  try {
-    const features = new APIFeatures(Travel.find(), req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
+// exports.getAllTravel = async (req, res, next) => {
+//   try {
+//     const features = new APIFeatures(Travel.find(), req.query)
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
 
-    const travels = await features.query;
+//     const travels = await features.query;
 
-    // const travels = await query;
-    res.status(200).json({
-      status: "success",
-      requestedAt: req.requestTime,
-      results: travels.length,
-      data: travels,
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err,
-    });
-  }
-};
+//     // const travels = await query;
+//     res.status(200).json({
+//       status: "success",
+//       requestedAt: req.requestTime,
+//       results: travels.length,
+//       data: travels,
+//     });
+//   } catch (err) {
+//     res.status(400).json({
+//       status: "fail",
+//       message: err,
+//     });
+//   }
+// };
 
-exports.getTravel = catchAsync(async (req, res, next) => {
-  const travels = await Travel.findById(req.params.id)
-  .populate('reviews')
+// exports.getTravel = catchAsync(async (req, res, next) => {
+//   const travels = await Travel.findById(req.params.id).populate("reviews");
 
-  console.log("---------------", travels);
-  if (!travels) {
-    return next(new AppError("no tour found", 404));
-  }
+//   console.log("---------------", travels);
+//   if (!travels) {
+//     return next(new AppError("no tour found", 404));
+//   }
 
-  res.status(200).json({
-    status: "success",
-    requestedAt: req.requestTime,
-    results: Travel.length,
-    data: travels,
-  });
-});
+//   res.status(200).json({
+//     status: "success",
+//     requestedAt: req.requestTime,
+//     results: Travel.length,
+//     data: travels,
+//   });
+// });
 
-exports.createTravel = catchAsync(async (req, res, next) => {
-  const newTravel = await Travel.create(req.body);
+// exports.createTravel = catchAsync(async (req, res, next) => {
+//   const newTravel = await Travel.create(req.body);
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      travel: newTravel,
-    },
-  });
-  // try {
+//   res.status(201).json({
+//     status: "success",
+//     data: {
+//       travel: newTravel,
+//     },
+//   });
 
-  // } catch (err) {
-  //   res.status(400).json({
-  //     status: "fail",
-  //     message: err,
-  //   });
-  // }
-});
+// });
 
-exports.updateTravel = catchAsync(async (req, res) => {
-  const travel = await Travel.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!travel) {
-    return next(new AppError("no tour found", 404));
-  }
-  res.status(200).json({
-    status: "success",
-    data: "<Updated Travel>",
-    updatedData: travel,
-  });
-});
+exports.createTravel = factory.createOne(Travel);
+exports.getTravel = factory.getOne(Travel, { path: "reviews" });
+exports.getAllTravel = factory.getAll(Travel);
+exports.updateTravel = factory.updateOne(Travel);
+exports.deleteTravel = factory.deleteOne(Travel);
 
-exports.deleteTravel = catchAsync(async (req, res, next) => {
-  const travel = await Travel.findByIdAndDelete(req.params.id);
-  if (!travel) {
-    return next(new AppError("no tour found", 404));
-  }
-  res.status(204).json({
-    status: "success",
-    data: null,
-  });
-});
+// exports.updateTravel = catchAsync(async (req, res) => {
+//   const travel = await Travel.findByIdAndUpdate(req.params.id, req.body, {
+//     new: true,
+//     runValidators: true,
+//   });
+//   if (!travel) {
+//     return next(new AppError("no tour found", 404));
+//   }
+//   res.status(200).json({
+//     status: "success",
+//     data: "<Updated Travel>",
+//     updatedData: travel,
+//   });
+// });
+
+// exports.deleteTravel = catchAsync(async (req, res, next) => {
+//   const travel = await Travel.findByIdAndDelete(req.params.id);
+//   if (!travel) {
+//     return next(new AppError("no tour found", 404));
+//   }
+//   res.status(204).json({
+//     status: "success",
+//     data: null,
+//   });
+// });
 
 exports.getTravelStats = catchAsync(async (req, res) => {
   const stats = await Travel.aggregate([
