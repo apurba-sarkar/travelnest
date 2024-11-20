@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Travel = require("./travelModel");
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -36,6 +37,8 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+reviewSchema.index({ travel: 1, user: 1 }, { unique: true });
+
 reviewSchema.pre(/^find/, function (next) {
   // this.populate({
   //   path: "travel",
@@ -51,5 +54,50 @@ reviewSchema.pre(/^find/, function (next) {
   });
   next();
 });
+
+reviewSchema.statics.calCAverageRatings = async function (travelId) {
+  const stats = await this.aggregate([
+    {
+      $match: { travel: travelId },
+    },
+    {
+      $group: {
+        _id: "$travel",
+        nRatings: { $sum: 1 },
+        avgRatings: { $avg: "$rating" },
+      },
+    },
+  ]);
+  console.log(stats);
+
+  if (stats.lenght > 0) {
+    await Travel.findByIdAndUpdate(travelId, {
+      ratingQuantiity: stats[0].nRatings,
+      ratingAverage: stats[0].avgRatings,
+    });
+  } else {
+    await Travel.findByIdAndUpdate(travelId, {
+      ratingQuantiity: 0,
+      ratingAverage: 4.5,
+    });
+  }
+};
+
+// !remind that part
+
+reviewSchema.post("save", function () {
+  this.constructor.calCAverageRatings(this.travel);
+});
+
+// !remind that part
+reviewSchema.pre(/^findOneAnd/, async function (next) {
+  this.r = await this.findOne();
+  // console.log(this.r);
+  next();
+});
+reviewSchema.post(/^findOneAnd/, async function () {
+  await this.r.constructor.calCAverageRatings(this.r.travel);
+});
+
 const Review = mongoose.model("Review", reviewSchema);
 module.exports = Review;

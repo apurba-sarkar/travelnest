@@ -22,6 +22,7 @@ const travelSchema = new mongoose.Schema(
     ratingAverage: {
       type: Number,
       default: 4.5,
+      set: (val) => Math.round(val * 10) / 10,
     },
     price: {
       type: Number,
@@ -107,6 +108,10 @@ const travelSchema = new mongoose.Schema(
   }
 );
 
+// travelSchema.index({ price: 1 });
+travelSchema.index({ price: 1, ratingAverage: -1 });
+travelSchema.index({ slug: 1 });
+
 travelSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
 });
@@ -115,10 +120,10 @@ travelSchema.virtual("durationWeeks").get(function () {
 travelSchema.virtual("reviews", {
   ref: "Review", //!model name
   foreignField: "travel",
-  localField: "_id"
+  localField: "_id",
 });
 
-//!end-
+//!end---
 
 travelSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
@@ -144,7 +149,6 @@ travelSchema.pre(/^find/, function (next) {
   this.start = Date.now();
   next();
 });
-
 
 // *popualte used with pre method --> no need to add on controller
 
