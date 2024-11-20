@@ -16,11 +16,20 @@ router
   .route("/monthly-plan/:year")
   .get(
     authController.protect,
-    authController.restrictTo("admin", "lead-guide","guide"),
+    authController.restrictTo("admin", "lead-guide", "guide"),
     travelController.getMonthlyPlan
   );
 
 router.route("/travel-stats").get(travelController.getTravelStats);
+
+router
+  .route("/travels-within/:distance/center/:latlng/unit/:unit")
+  .get(travelController.getTravelWithin);
+
+router
+  .route("/distances/:latlng/unit/:unit")
+  .get(travelController.getDistances);
+
 router
   .route("/")
   .get(
