@@ -4,7 +4,6 @@ const catchAsync = require("../utils/catchAsync");
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
 const sendEmail = require("../utils/email");
-const { token } = require("morgan");
 const crypto = require("crypto");
 
 const signToken = (id) => {
@@ -20,18 +19,29 @@ const createSendToken = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
-    // secure: true,
+    // secure: false,
     httpOnly: true,
   };
-  if ((process.env.NODE_ENV = "production")) cookieOptions.secure = true;
-  res.cookie("jwt", token, cookieOptions);
 
+  // !---------------
+
+  // if ((process.env.NODE_ENV = "production")) cookieOptions.secure = true;
+  // res.cookie("jwt", token, cookieOptions);
+
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax", //  "Lax" || "Strict || "none"  // Change to 'None' if using HTTPS and cross-domain cookies
+  });
+
+  // !----------------
   // ---------------------/-------------------
   console.log(token);
 
   user.password = undefined;
   res.status(statusCode).json({
     status: "success",
+    message: "login successful",
     token,
     data: {
       user,
@@ -76,43 +86,38 @@ exports.login = catchAsync(async (req, res, next) => {
 
 exports.protect = catchAsync(async (req, res, next) => {
   //get token and check if its exist or not
-  let token;
+  // let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  } else {
-    console.log("Authorization header is missing or improperly formatted");
-  }
-
-  console.log("Extracted token:", token);
-
-  if (!token) {
-    return next(
-      new AppError("You are not logged in! Please logged in again", 401)
+  // if (
+  //   req.headers.authorization &&
+  //   req.headers.authorization.startsWith("Bearer")
+  // ) {
+  //   token = req.headers.authorization.split(" ")[1];
+  // } else if (req.cookies.jwt) {
+  //   token - req.cookies, jwt;
+  //   console.log("Authorization header is missing or improperly formatted");
+  // }
+  if (req.cookies.jwt) {
+    //verification token
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
     );
-  }
-  //verification token
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  console.log(decoded);
+    // console.log(decoded);
 
-  //check if user still exists
+    //check if user still exists
 
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return next(new AppError("Session Expired", 401));
-  }
-  // check if  user change password after token was issued
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) return next();
 
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
-    return next(
-      new AppError("User recently changed password!, Please login in again!")
-    );
+    // check if  user change password after token was issued
+
+    if (currentUser.changedPasswordAfter(decoded.iat)) return next();
+
+    // the user is already logged in
+    req.user = currentUser;
+    return next();
   }
-  // grant access
-  req.user = currentUser;
   next();
 });
 

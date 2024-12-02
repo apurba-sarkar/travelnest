@@ -50,7 +50,7 @@ const travelSchema = new mongoose.Schema(
         validator: function (val) {
           return val < this.price;
         },
-        message: "Discount price should below the regular {VALUE} price",
+        message: "Discount price should below the regular VALUE price",
       },
     },
     summery: {
